@@ -5082,8 +5082,7 @@ class BIntRules:
     return handler
 
   @staticmethod
-  def global_sharded_result_handler(aval, out_sharding, committed,
-                                    is_out_sharding_from_xla):
+  def global_sharded_result_handler(aval, out_sharding, committed):
     phys_aval = core.physical_aval(aval)
     phys_handler_maker = pxla.global_result_handlers[core.ShapedArray]
 
@@ -5091,8 +5090,7 @@ class BIntRules:
       raise NotImplementedError  # TODO(mattjj)
     else:
       phys_sharding = out_sharding
-    phys_handler = phys_handler_maker(phys_aval, phys_sharding, committed,
-                                      is_out_sharding_from_xla)
+    phys_handler = phys_handler_maker(phys_aval, phys_sharding, committed)
 
     def handler(bufs):
       return core.DArray(aval, phys_handler(bufs))
@@ -5103,11 +5101,23 @@ class BIntRules:
     return hlo_sharding
 
   @staticmethod
+  def logical_op_sharding(aval, phys_sharding):
+    return phys_sharding
+
+  @staticmethod
   def convert_from(bint_dtype, other_dtype) -> bool:
     return other_dtype in (np.dtype('int32'), np.dtype('int64'))
 
   @staticmethod
   def convert_to(other_dtype, bint_dtype) -> bool:
     return other_dtype in (np.dtype('int32'), np.dtype('int64'))
+
+  @staticmethod
+  def replicate_trailing_dims(ctx, val: ir.Value, aval) -> ir.Value:
+    return val
+
+  @staticmethod
+  def check_replicated_trailing_dims(sharding: jax.sharding.GSPMDSharding, aval):
+    pass
 
 core.bint._rules = BIntRules
